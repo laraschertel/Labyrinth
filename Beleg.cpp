@@ -38,7 +38,7 @@ glsl::Shader Beleg::diffuseShader;
 float Beleg::scaling = 2.0; // scale
 
 
-float Beleg::step = 0.2;
+float Beleg::step = 0.3;
 
 std::pair<glm::vec3, glm::vec3> Beleg::box;
 
@@ -56,8 +56,6 @@ LightSource Beleg::lightSource={
 vec3 Beleg::translationStart(5, 0, 11);
 
 
-static vec3 lastPosition = vec3(5, 0, 11);
-
 
 void Beleg::init(){
     cube.load("meshes/cube.off", false);
@@ -74,13 +72,7 @@ void Beleg::init(){
 
     modelMatrix = scale(modelMatrix, vec3(0.45));
     
-    box.first *= 0.45;
-    box.second *= 0.45;
 
-    
-    
-
- 
 
     const std::string version = "#version 120\n";
 
@@ -156,31 +148,39 @@ void Beleg::display(void) {
     {
         bool colision = false;
         modelMatrix = modelMatrix * rotationMatrix;
-        box.first = vec3(rotationMatrix * vec4(box.first, 1));
-        box.second = vec3(rotationMatrix * vec4(box.second, 1));
-         for (int x = 0; x < 10; x++) {
+        for (int x = 0; x < 10; x++) {
             for (int z = 0; z < 10; z++) {
                 if (labyrith[x][z] == true) {
                     vec3 cubePosition = vec3(z, 0, x);
-                    vec3 position = lastPosition;
-                    position += vec3(rotationMatrix * vec4(step, 0, 0, 1));
-                    if (cubePosition[2] == position[2] && abs(cubePosition[0] - position[0]) <= 2) {
+
+                    mat4 positionMatrix = glm::translate(modelMatrix, vec3(step, 0, 0));
+                    vec3 position = vec3(positionMatrix * vec4(1));
+
+
+                    if (abs(position[2] - cubePosition[2]) >= 0.5) {
+                        continue;
+                    }
+                    else if (abs(position[0] - cubePosition[0]) >= 0.5) {
+                        continue;
+                    }
+                    else {
                         colision = true;
                     }
-                    else if (cubePosition[0] == position[0] && abs(cubePosition[2] - position[2]) <= 2) {
-                        colision = true;
-                    }
-                    //else if()
-                    //else colision = true;
+
 
                 }
+
+
             }
+
         }
-         if (colision == false) {
+        if (colision == false) {
             modelMatrix = glm::translate(modelMatrix, vec3(step, 0, 0));
-            lastPosition = vec3(modelMatrix * vec4(lastPosition, 1));
-        }
+           
+         }
+      
        
+   
         step = 0;
         rotationMatrix = mat4(1);
 
@@ -193,21 +193,22 @@ void Beleg::display(void) {
     }
 
 
+    {
+        for (int x = 0; x < 10; x++) {
+            for (int z = 0; z < 10; z++) {
 
-    for (int x = 0; x < 10; x++) {
-        for (int z = 0; z < 10;z++) {
-
-            if (labyrith[x][z] == true) {
-                glm::vec3 translation(z, 0, x);
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-                model = scale(model, vec3(0.5));
-                glm::mat4 mvp = projectionMatrix * viewMatrix * model;
-                diffuseShader.setUniform("transformation", mvp);
-                diffuseShader.setUniform("color", vec3(1, 1, 1));
-                diffuseShader.setUniform("lightPosition", inverse(modelMatrix) * lightSource.position);
-                cube.draw();
+                if (labyrith[x][z] == true) {
+                    glm::vec3 translation(z, 0, x);
+                    glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+                    model = scale(model, vec3(0.5));
+                    glm::mat4 mvp = projectionMatrix * viewMatrix * model;
+                    diffuseShader.setUniform("transformation", mvp);
+                    diffuseShader.setUniform("color", vec3(1, 1, 1));
+                    diffuseShader.setUniform("lightPosition", inverse(modelMatrix) * lightSource.position);
+                    cube.draw();
+                }
+                else continue;
             }
-            else continue;
         }
     }
 

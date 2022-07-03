@@ -89,6 +89,7 @@ private:
 	//step size
 	static float step;
 
+
 	//start punkt
 	static glm::vec3 translationStart;
 
